@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="kirok-react-binding-jvm-1.0-SNAPSHOT">
+    <output-path>$PROJECT_DIR$/build/libs</output-path>
+    <root id="archive" name="kirok-react-binding-jvm-1.0-SNAPSHOT.jar">
+      <element id="module-output" name="kirok-react-binding.jvmMain" />
+    </root>
+  </artifact>
+</component>
