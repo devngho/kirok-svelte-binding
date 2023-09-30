@@ -1,5 +1,6 @@
 plugins {
     kotlin("multiplatform") version "1.9.0"
+    id("org.jetbrains.dokka") version "1.8.20"
     `maven-publish`
     signing
 }
@@ -9,7 +10,6 @@ version = "1.0"
 
 repositories {
     mavenCentral()
-    mavenLocal()
 }
 
 kotlin {
@@ -27,11 +27,19 @@ kotlin {
         val commonTest by getting
         val jvmMain by getting {
             dependencies {
-                implementation("io.github.devngho:kirok-binding:1.0-SNAPSHOT")
+                implementation("io.github.devngho:kirok-binding:1.0")
             }
         }
         val jvmTest by getting
     }
+}
+
+val dokkaHtml by tasks.getting(org.jetbrains.dokka.gradle.DokkaTask::class)
+
+val javadocJar: TaskProvider<Jar> by tasks.registering(Jar::class) {
+    dependsOn(dokkaHtml)
+    archiveClassifier.set("javadoc")
+    from(dokkaHtml.outputDirectory)
 }
 
 fun PublishingExtension.kirok() {
@@ -82,6 +90,9 @@ fun PublishingExtension.kirok() {
         groupId = project.group as String?
         artifactId = "kirok-svelte-binding"
         version = project.version as String?
+
+        artifact(tasks["javadocJar"])
+
         kirok()
     }
 }
@@ -90,9 +101,4 @@ kotlin {
     publishing {
         kirok()
     }
-}
-
-java {
-    withSourcesJar()
-    withJavadocJar()
 }
