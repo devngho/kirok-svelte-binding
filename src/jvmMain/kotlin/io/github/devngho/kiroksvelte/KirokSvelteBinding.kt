@@ -3,6 +3,7 @@ package io.github.devngho.kiroksvelte
 import io.github.devngho.kirok.binding.Binding
 import java.io.File
 import java.nio.file.Path
+import kotlin.reflect.full.starProjectedType
 
 
 @Suppress("unused")
@@ -12,34 +13,9 @@ class KirokSvelteBinding: Binding {
     }
 
     private fun createModelFile(buildDir: Path, model: Binding.BindingModel) {
-//        val protoPath = Path.of(model.protoFilePath).absolute().normalize().pathString.replace("\\", "/")
-//        val protoFolder = Path.of(model.protoFilePath).parent.absolute().normalize().pathString.replace("\\", "/")
-//        val command = "protoc --js_out=import_style=commonjs,binary:${buildDir.absolute().normalize().pathString.replace("\\", "/")} $protoPath -I $protoFolder"
-
         val modelSimpleName = model.name.split(".").last()
 
-//        Runtime.getRuntime().exec(command).apply {
-//            inputStream.copyTo(System.out)
-//            errorStream.copyTo(System.err)
-//
-//            waitFor()
-//
-//            buildDir.toFile().listFiles()!!
-//                .filter { it.name.contains("pb") }
-//                .forEach {
-//                    // cjs -> esm
-//
-//                    val file = it.readText()
-//                        .replace("var jspb = require('google-protobuf');", "import * as jspb from 'google-protobuf';")
-//                        .replace("goog.object.extend(exports, proto);",  "")
-//                        .replace("goog.exportSymbol('proto.${modelSimpleName}', null, global);", "export let $modelSimpleName = null;")
-//                        .replace("proto.${modelSimpleName}", modelSimpleName)
-//                        .replace("${modelSimpleName}.serializeBinaryToWriter", "${modelSimpleName}.prototype.serializeBinaryToWriter")
-//                        .replace("${modelSimpleName}.deserializeBinaryToWriter", "${modelSimpleName}.deprototype.serializeBinaryToWriter")
-//                        .replace("// GENERATED CODE -- DO NOT EDIT!", "// GENERATED CODE -- DO NOT EDIT!\n// CODE WAS EDITED BY KIROK-SVELTE-BINDING FOR SUPPORTING ESM")
-//                    it.writeText(file)
-//                }
-//        }
+
 
         val modelTemplate = javaClass.getClassLoader().getResourceAsStream("model.ts")!!.bufferedReader().readText()
         val modelFile = File(buildDir.toFile(), "${modelSimpleName}.ts")
@@ -53,7 +29,7 @@ class KirokSvelteBinding: Binding {
                 var j = 0
                 val paramsWithType = u.subList(1, u.count()).joinToString(", ") {
                     j += 1
-                    return@joinToString "arg${j - 1}: any"
+                    return@joinToString "arg${j - 1}: ${TypeGenerator.convertType(it.starProjectedType)}"
                 }
                 j = 0
                 val params = (u.subList(1, u.count())).joinToString(", ") {
@@ -89,21 +65,18 @@ class KirokSvelteBinding: Binding {
             }
         }
 
+        val modelValueType =
+            TypeGenerator.createValueType(model).map { (k, v) -> "$k: $v" }.joinToString(", ").run { "{$this}" }
+
         modelFile.bufferedWriter().use {
             it.write(
                 modelTemplate
                     .replace("%modelname%", modelSimpleName)
-                    .replace("%modeltype%", "[Writable<any>, any]")
+                    .replace(
+                        "%modeltype%",
+                        "[Writable<$modelValueType>, {${model.intents.keys.joinToString(", ") { "${it}: () => Promise<void>" }}}]"
+                    )
                     .replace("%modelintent%", intents)
-//                    .replace("%imports%", "import {${modelSimpleName}} from './${modelSimpleName}_pb';")
-//                    .replace("%protosetfields%", model.values.map { (t, _) ->
-//                        "  if (v.set${t.lowercase().replaceFirstChar { c -> c.uppercase() }}List) v.set${t.lowercase().replaceFirstChar { c -> c.uppercase() }}List(value.${t}List);\n else v.set${t.lowercase().replaceFirstChar { c -> c.uppercase() }}(value.$t);\n"
-//                    }.joinToString(""))
-//                    .replace("%modelremap%", "{${
-//                        model.values.map { (t, _) ->
-//                            "${t}: obj.${t.lowercase()} ?? obj.${t.lowercase()}List"
-//                        }.joinToString(", ")
-//                    }}")
             )
         }
     }
