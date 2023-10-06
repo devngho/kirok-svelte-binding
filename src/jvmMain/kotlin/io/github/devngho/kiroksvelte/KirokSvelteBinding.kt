@@ -14,11 +14,9 @@ class KirokSvelteBinding: Binding {
 
     private fun createModelFile(buildDir: Path, model: Binding.BindingModel) {
         val modelSimpleName = model.name.split(".").last()
-
-
-
         val modelTemplate = javaClass.getClassLoader().getResourceAsStream("model.ts")!!.bufferedReader().readText()
         val modelFile = File(buildDir.toFile(), "${modelSimpleName}.ts")
+
         try {
             modelFile.createNewFile()
         } catch (_: Exception) { }
@@ -74,7 +72,7 @@ class KirokSvelteBinding: Binding {
                     .replace("%modelname%", modelSimpleName)
                     .replace(
                         "%modeltype%",
-                        "[Writable<$modelValueType>, {${model.intents.keys.joinToString(", ") { "${it}: () => Promise<void>" }}}]"
+                        "[Writable<$modelValueType>, {${model.intents.keys.joinToString(", ") { j -> "${j.removePrefix("SUSPEND_")}: () => Promise<void>" }}}]"
                     )
                     .replace("%modelintent%", intents)
             )
