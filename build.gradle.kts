@@ -1,14 +1,14 @@
 import org.jetbrains.kotlin.gradle.targets.js.dsl.ExperimentalWasmDsl
 
 plugins {
-    kotlin("multiplatform") version "1.9.0"
+    kotlin("multiplatform") version "1.9.22"
     id("org.jetbrains.dokka") version "1.9.0"
     `maven-publish`
     signing
 }
 
 group = "io.github.devngho"
-version = "1.0.2"
+version = "1.1.1"
 
 repositories {
     mavenCentral()
@@ -35,7 +35,7 @@ kotlin {
     }
 
     @OptIn(ExperimentalWasmDsl::class)
-    wasm {
+    wasmJs {
         binaries.executable()
         browser {}
         applyBinaryen()
@@ -46,7 +46,7 @@ kotlin {
         val commonTest by getting
         val jvmMain by getting {
             dependencies {
-                implementation("io.github.devngho:kirok-binding:1.0")
+                implementation("io.github.devngho:kirok-binding:1.1.0")
                 implementation(kotlin("reflect"))
             }
         }
@@ -68,9 +68,20 @@ publishing {
     repositories {
         mavenLocal()
         if (!version.toString().endsWith("SNAPSHOT")) {
-            maven("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/") {
-                name = "sonatypeReleaseRepository"
-                credentials(PasswordCredentials::class)
+            val id: String =
+                if (project.hasProperty("repoUsername")) project.property("repoUsername") as String
+                else System.getenv("repoUsername")
+            val pw: String =
+                if (project.hasProperty("repoPassword")) project.property("repoPassword") as String
+                else System.getenv("repoPassword")
+            if (!version.toString().endsWith("SNAPSHOT")) {
+                maven("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/") {
+                    name = "sonatypeReleaseRepository"
+                    credentials {
+                        username = id
+                        password = pw
+                    }
+                }
             }
         }
     }
@@ -110,22 +121,30 @@ publishing {
 }
 
 tasks {
+    val taskList = this.toList().map { it.name }
     getByName("signKotlinMultiplatformPublication") {
-        dependsOn(
-            "publishJvmPublicationToSonatypeReleaseRepositoryRepository",
-            "publishJvmPublicationToMavenLocalRepository"
-        )
-//        dependsOn("publishJvmPublicationToMavenLocalRepository")
+        if (taskList.contains("publishJvmPublicationToSonatypeReleaseRepositoryRepository"))
+            dependsOn(
+                "publishJvmPublicationToSonatypeReleaseRepositoryRepository",
+                "publishJvmPublicationToMavenLocalRepository",
+                "publishJvmPublicationToMavenLocal"
+            )
+        else dependsOn("publishJvmPublicationToMavenLocalRepository", "publishJvmPublicationToMavenLocal")
     }
-
-    getByName("signWasmPublication") {
-        dependsOn(
-            "publishJvmPublicationToSonatypeReleaseRepositoryRepository",
-            "publishKotlinMultiplatformPublicationToSonatypeReleaseRepositoryRepository",
-            "publishKotlinMultiplatformPublicationToMavenLocalRepository",
-        )
-//        dependsOn(
-//            "publishKotlinMultiplatformPublicationToMavenLocalRepository",
-//        )
+    getByName("signWasmJsPublication") {
+        if (taskList.contains("publishJvmPublicationToSonatypeReleaseRepositoryRepository"))
+            dependsOn(
+                "publishJvmPublicationToSonatypeReleaseRepositoryRepository",
+                "publishKotlinMultiplatformPublicationToSonatypeReleaseRepositoryRepository",
+                "publishJvmPublicationToMavenLocal",
+                "publishJvmPublicationToMavenLocalRepository",
+                "publishKotlinMultiplatformPublicationToMavenLocalRepository"
+            )
+        else
+            dependsOn(
+                "publishJvmPublicationToMavenLocal",
+                "publishKotlinMultiplatformPublicationToMavenLocal",
+                "publishKotlinMultiplatformPublicationToMavenLocalRepository"
+            )
     }
 }

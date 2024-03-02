@@ -1,6 +1,6 @@
 package io.github.devngho.kiroksvelte
 
-import io.github.devngho.kirok.binding.Binding
+import io.github.devngho.kirok.binding.BindingModel
 import io.kotest.common.ExperimentalKotest
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
@@ -45,21 +45,23 @@ class TypeGeneratorTest : BehaviorSpec({
             data class TestClass(val a: Int, val b: String)
             data class TestClass2(val a: Int, val b: String, val c: TestClass)
 
-            val model = Binding.BindingModel(
+            val model = BindingModel(
                 "io.github.devngho.kiroksvelte.TestModel",
                 mapOf(
-                    "testPrimitive" to String::class,
-                    "testModels" to TestClass2::class
+                    "testPrimitive" to String::class.starProjectedType,
+                    "testModels" to TestClass2::class.starProjectedType
                 ),
                 mapOf(
-                    "testPrimitive" to listOf(
-                        String::class,
-                        Boolean::class
+                    "testPrimitive" to mapOf(
+                        "arg1" to String::class.starProjectedType,
+                        "arg2" to Boolean::class.starProjectedType
                     ),
-                    "testModels" to listOf(
-                        TestClass2::class
+                    "testModels" to mapOf(
+                        "arg1" to TestClass2::class.starProjectedType
                     )
-                )
+                ),
+                mapOf(),
+                false
             )
 
             `when`("values") {
