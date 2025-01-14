@@ -3,7 +3,7 @@
 //eslint-disable
 //@formatter:off
 
-import {writable} from 'svelte/store';
+import { writable, get } from 'svelte/store';
 
 let instance: WebAssembly.Exports | null = null;
 
