@@ -8,7 +8,7 @@ import {writable} from 'svelte/store';
 let instance: WebAssembly.Exports | null = null;
 
 try {
-    instance = (await import('./index.mjs')).default;
+    instance = await import('./index.mjs');
 } catch (e) {
     console.error(e);
 }
