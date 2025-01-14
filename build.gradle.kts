@@ -1,14 +1,16 @@
-import org.jetbrains.kotlin.gradle.targets.js.dsl.ExperimentalWasmDsl
+@file:OptIn(ExperimentalWasmDsl::class)
+
+import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 
 plugins {
-    kotlin("multiplatform") version "1.9.22"
-    id("org.jetbrains.dokka") version "1.9.0"
+    kotlin("multiplatform") version "2.1.0"
+    id("org.jetbrains.dokka") version "2.0.0"
     `maven-publish`
     signing
 }
 
 group = "io.github.devngho"
-version = "1.1.1"
+version = "1.1.3"
 
 repositories {
     mavenCentral()
@@ -25,7 +27,7 @@ val javadocJar: TaskProvider<Jar> by tasks.registering(Jar::class) {
 
 kotlin {
     withSourcesJar(true)
-    jvmToolchain(19)
+    jvmToolchain(21)
 
     jvm {
         withJava()
@@ -34,11 +36,9 @@ kotlin {
         }
     }
 
-    @OptIn(ExperimentalWasmDsl::class)
     wasmJs {
         binaries.executable()
         browser {}
-        applyBinaryen()
     }
 
     sourceSets {
@@ -46,13 +46,13 @@ kotlin {
         val commonTest by getting
         val jvmMain by getting {
             dependencies {
-                implementation("io.github.devngho:kirok-binding:1.1.0")
+                implementation("io.github.devngho:kirok-binding:1.1.3")
                 implementation(kotlin("reflect"))
             }
         }
         val jvmTest by getting {
             dependencies {
-                val kotestVersion = "5.7.2"
+                val kotestVersion = "5.9.1"
                 implementation("io.kotest:kotest-runner-junit5:$kotestVersion")
                 implementation("io.kotest:kotest-assertions-core:$kotestVersion")
             }
